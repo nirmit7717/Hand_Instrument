@@ -33,12 +33,11 @@ def main():
     instrument_manager = InstrumentManager(audio_engine)
     overlay = Overlay(FRAME_WIDTH, FRAME_HEIGHT)
     
-    swipe_debouncer = Debouncer(debounce_time=0.8)
+    system_debouncer = Debouncer(debounce_time=0.8)
 
     print("Starting Pygame Instrument. Press ESC to quit.")
 
     running = True
-    last_swipe = ""
 
     while running:
         frame = camera.read_frame()
@@ -58,17 +57,18 @@ def main():
         
         overlay.draw_landmarks(frame, hands_data)
 
-        swipe = gesture_state.get("swipe")
-        if swipe and swipe_debouncer.can_trigger("swipe"):
-            last_swipe = swipe
-            if swipe == "Right":
-                instrument_manager.shift_octave(up=True)
-            elif swipe == "Left":
-                instrument_manager.shift_octave(up=False)
-            elif swipe == "Up":
-                instrument_manager.toggle_instrument(up=True)
-            elif swipe == "Down":
-                instrument_manager.toggle_instrument(up=False)
+        left_thumb_bent = gesture_state.get("Left", {}).get("Thumb", False)
+        right_thumb_bent = gesture_state.get("Right", {}).get("Thumb", False)
+        right_pinky_bent = gesture_state.get("Right", {}).get("Pinky", False)
+        
+        if left_thumb_bent and system_debouncer.can_trigger("left_thumb"):
+            instrument_manager.shift_octave(up=False)
+            
+        if right_thumb_bent and system_debouncer.can_trigger("right_thumb"):
+            instrument_manager.shift_octave(up=True)
+            
+        if right_pinky_bent and system_debouncer.can_trigger("right_pinky"):
+            instrument_manager.toggle_instrument(up=True)
 
         notes_to_play = note_mapper.get_triggered_notes(gesture_state, instrument_manager.current_octave)
         
@@ -78,7 +78,7 @@ def main():
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame_surf = pygame.surfarray.make_surface(np.swapaxes(frame_rgb, 0, 1))
 
-        overlay.draw_dashboard(frame_surf, instrument_manager.current_instrument, instrument_manager.current_octave, last_swipe)
+        overlay.draw_dashboard(frame_surf, instrument_manager.current_instrument, instrument_manager.current_octave)
         overlay.draw_piano(frame_surf, notes_to_play, instrument_manager.current_octave)
 
         screen.blit(frame_surf, (0, 0))

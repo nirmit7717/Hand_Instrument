@@ -26,8 +26,8 @@ class Overlay:
                     self.mp_drawing_styles.get_default_hand_connections_style()
                 )
 
-    def draw_dashboard(self, surface, instrument, octave, swipe_text):
-        panel_rect = pygame.Rect(self.width - 240, 20, 220, 150)
+    def draw_dashboard(self, surface, instrument, octave):
+        panel_rect = pygame.Rect(self.width - 240, 20, 220, 120)
         panel_surface = pygame.Surface((panel_rect.width, panel_rect.height), pygame.SRCALPHA)
         pygame.draw.rect(panel_surface, (25, 25, 30, 210), panel_surface.get_rect(), border_radius=12)
         surface.blit(panel_surface, panel_rect.topleft)
@@ -39,18 +39,14 @@ class Overlay:
         surface.blit(title, (self.width - 220, 35))
         surface.blit(inst_label, (self.width - 220, 65))
         surface.blit(octave_label, (self.width - 220, 100))
-        
-        if swipe_text:
-            swipe_label = self.font_small.render(f"Swipe Detected: {swipe_text}", True, (200, 200, 255))
-            surface.blit(swipe_label, (self.width - 220, 135))
 
     def draw_piano(self, surface, triggered_notes, current_octave):
         key_width = 80
         key_height = 100
-        start_x = (self.width - (key_width * 5)) // 2
+        start_x = (self.width - (key_width * 7)) // 2
         start_y = self.height - key_height - 20
         
-        notes = ["C", "D", "E", "F", "G"]
+        notes = ["C", "D", "E", "F", "G", "A", "B"]
         
         for i, note in enumerate(notes):
             full_note = f"{note}{current_octave}"
