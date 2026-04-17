@@ -1,10 +1,11 @@
-FREQUENCIES = {
-    # Octave 3 (base)
-    "C3": 130.81, "D3": 146.83, "E3": 164.81, "F3": 174.61, "G3": 196.00, "A3": 220.00, "B3": 246.94,
-    # Octave 4
-    "C4": 261.63, "D4": 293.66, "E4": 329.63, "F4": 349.23, "G4": 392.00, "A4": 440.00, "B4": 493.88,
-    # Octave 5
-    "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99, "A5": 880.00, "B5": 987.77
-}
+NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+FREQUENCIES = {}
+
+# Generate universal mapping across wide pitch spread (Octaves 2 - 6)
+for octave in range(2, 7):
+    for i, note in enumerate(NOTES):
+        midi_number = 12 * (octave + 1) + i
+        freq = 440.0 * (2.0 ** ((midi_number - 69) / 12.0))
+        FREQUENCIES[f"{note}{octave}"] = round(freq, 2)
 
 DEFAULT_OCTAVE = 4

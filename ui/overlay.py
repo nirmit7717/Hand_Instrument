@@ -11,9 +11,19 @@ class Overlay:
         self.height = height
         
         pygame.font.init()
-        self.font_large = pygame.font.SysFont('Segoe UI', 32, bold=True)
-        self.font_medium = pygame.font.SysFont('Segoe UI', 22, bold=True)
-        self.font_small = pygame.font.SysFont('Segoe UI', 16)
+        self.font_medium = pygame.font.SysFont('Segoe UI', 16, bold=True)
+        self.font_small = pygame.font.SysFont('Segoe UI', 12, bold=True)
+        
+        self.keys_layout = [
+            ("A", -1), ("A#", -1), ("B", -1),
+            ("C", 0), ("C#", 0), ("D", 0), ("D#", 0), ("E", 0), ("F", 0), ("F#", 0), ("G", 0), ("G#", 0), ("A", 0), ("A#", 0), ("B", 0),
+            ("C", 1), ("C#", 1), ("D", 1), ("D#", 1), ("E", 1)
+        ]
+        
+        self.piano_w = 600
+        self.piano_h = 160
+        self.piano_x = (self.width - self.piano_w) // 2
+        self.piano_y = self.height - self.piano_h - 20
 
     def draw_landmarks(self, frame, hands_data):
         for hand in hands_data:
@@ -26,40 +36,90 @@ class Overlay:
                     self.mp_drawing_styles.get_default_hand_connections_style()
                 )
 
-    def draw_dashboard(self, surface, instrument, octave):
-        panel_rect = pygame.Rect(self.width - 240, 20, 220, 120)
-        panel_surface = pygame.Surface((panel_rect.width, panel_rect.height), pygame.SRCALPHA)
-        pygame.draw.rect(panel_surface, (25, 25, 30, 210), panel_surface.get_rect(), border_radius=12)
-        surface.blit(panel_surface, panel_rect.topleft)
+    def get_hitboxes(self, current_octave):
+        hitboxes = {}
+        
+        btn_w, btn_h = 90, 40
+        hitboxes["SYS_OCT_DOWN"] = {"rect": pygame.Rect(20, 20, btn_w, btn_h), "type": "sys", "label": "< OCT"}
+        hitboxes["SYS_OCT_UP"] = {"rect": pygame.Rect(130, 20, btn_w, btn_h), "type": "sys", "label": "OCT >"}
+        hitboxes["SYS_INST"] = {"rect": pygame.Rect(240, 20, int(btn_w * 1.5), btn_h), "type": "sys", "label": "SWITCH INST"}
+        
+        drag_bar_h = 24
+        drag_rect = pygame.Rect(self.piano_x, self.piano_y - drag_bar_h, self.piano_w, drag_bar_h)
+        hitboxes["SYS_DRAG"] = {"rect": drag_rect, "type": "drag"}
+        
+        white_keys = [k for k in self.keys_layout if "#" not in k[0]]
+        total_white = len(white_keys)
+        
+        key_w = self.piano_w // total_white
+        self.piano_w = key_w * total_white 
+        
+        white_index = 0
+        for note, offset in self.keys_layout:
+            note_name = f"{note}{current_octave + offset}"
+            if "#" not in note:
+                rect = pygame.Rect(self.piano_x + (white_index * key_w), self.piano_y, key_w, self.piano_h)
+                hitboxes[note_name] = {"rect": rect, "type": "white"}
+                white_index += 1
+                
+        white_index = 0
+        for note, offset in self.keys_layout:
+            note_name = f"{note}{current_octave + offset}"
+            if "#" in note:
+                bw = int(key_w * 0.6)
+                bh = int(self.piano_h * 0.6)
+                bx = int(self.piano_x + (white_index * key_w) - (bw / 2))
+                rect = pygame.Rect(bx, self.piano_y, bw, bh)
+                hitboxes[note_name] = {"rect": rect, "type": "black"}
+            else:
+                white_index += 1
 
-        title = self.font_small.render("SETTINGS DASHBOARD", True, (150, 150, 160))
-        inst_label = self.font_medium.render(instrument.upper(), True, (0, 255, 150))
-        octave_label = self.font_medium.render(f"OCTAVE: {octave}", True, (255, 180, 50))
-        
-        surface.blit(title, (self.width - 220, 35))
-        surface.blit(inst_label, (self.width - 220, 65))
-        surface.blit(octave_label, (self.width - 220, 100))
+        return hitboxes
 
-    def draw_piano(self, surface, triggered_notes, current_octave):
-        key_width = 80
-        key_height = 100
-        start_x = (self.width - (key_width * 7)) // 2
-        start_y = self.height - key_height - 20
-        
-        notes = ["C", "D", "E", "F", "G", "A", "B"]
-        
-        for i, note in enumerate(notes):
-            full_note = f"{note}{current_octave}"
-            rect = pygame.Rect(start_x + (i * key_width), start_y, key_width - 8, key_height)
-            
-            is_active = full_note in triggered_notes
-            color = (255, 255, 255, 200) if not is_active else (50, 255, 100, 255)
-            
-            key_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-            pygame.draw.rect(key_surface, color, key_surface.get_rect(), border_radius=8)
-            pygame.draw.rect(key_surface, (80, 80, 80, 255), key_surface.get_rect(), width=3, border_radius=8)
-            surface.blit(key_surface, rect.topleft)
-            
-            label = self.font_large.render(note, True, (20, 20, 20))
-            label_rect = label.get_rect(center=rect.center)
-            surface.blit(label, label_rect)
+    def draw_ui(self, surface, hitboxes, active_pinches, pressed_keys, instrument):
+        for name, data in hitboxes.items():
+            if data["type"] == "sys":
+                rect = data["rect"]
+                is_active = name in active_pinches
+                color = (100, 255, 100, 200) if is_active else (40, 40, 50, 200)
+                
+                btn_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+                pygame.draw.rect(btn_surface, color, btn_surface.get_rect(), border_radius=5)
+                pygame.draw.rect(btn_surface, (200, 200, 200), btn_surface.get_rect(), width=2, border_radius=5)
+                surface.blit(btn_surface, rect.topleft)
+                
+                label_color = (0, 0, 0) if is_active else (255, 255, 255)
+                label = self.font_medium.render(data["label"], True, label_color)
+                surface.blit(label, label.get_rect(center=rect.center))
+
+        inst_label = self.font_medium.render(f"Playing: {instrument.upper()}", True, (50, 255, 200))
+        surface.blit(inst_label, (self.width - inst_label.get_width() - 20, 30))
+
+        if "SYS_DRAG" in hitboxes:
+            rect = hitboxes["SYS_DRAG"]["rect"]
+            color = (80, 80, 200, 200) if "SYS_DRAG" in active_pinches else (60, 60, 80, 200)
+            bar_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+            pygame.draw.rect(bar_surface, color, bar_surface.get_rect(), border_top_left_radius=8, border_top_right_radius=8)
+            surface.blit(bar_surface, rect.topleft)
+            drag_lbl = self.font_small.render("Pinch here to Drag Keyboard", True, (255, 255, 255))
+            surface.blit(drag_lbl, drag_lbl.get_rect(center=rect.center))
+
+        for name, data in hitboxes.items():
+            if data["type"] == "white":
+                rect = data["rect"]
+                is_active = name in pressed_keys
+                color = (150, 255, 150) if is_active else (240, 240, 240)
+                pygame.draw.rect(surface, color, rect)
+                pygame.draw.rect(surface, (20, 20, 20), rect, width=2)
+                label = self.font_small.render(name, True, (0, 0, 0))
+                surface.blit(label, (rect.centerx - label.get_width()//2, rect.bottom - 20))
+                
+        for name, data in hitboxes.items():
+            if data["type"] == "black":
+                rect = data["rect"]
+                is_active = name in pressed_keys
+                color = (100, 255, 100) if is_active else (30, 30, 30)
+                pygame.draw.rect(surface, color, rect)
+                pygame.draw.rect(surface, (0, 0, 0), rect, width=2)
+                label = self.font_small.render(name, True, (255, 255, 255))
+                surface.blit(label, (rect.centerx - label.get_width()//2, rect.bottom - 20))
