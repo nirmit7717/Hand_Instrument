@@ -2,6 +2,13 @@ import cv2
 import time
 import numpy as np
 import pygame
+import os
+import warnings
+
+# Silence common Mediapipe/TF warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+warnings.filterwarnings("ignore", category=UserWarning, module='google.protobuf.symbol_database')
+
 from config import CAMERA_INDEX, FRAME_WIDTH, FRAME_HEIGHT, TARGET_FPS
 
 from vision.camera import Camera
@@ -58,12 +65,18 @@ def main():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                print("Exiting: QUIT event received")
                 running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    print("Exiting: ESC key pressed")
                     running = False
 
-        hands_data = hand_tracker.process_frame(frame)
+        try:
+            hands_data = hand_tracker.process_frame(frame)
+        except Exception as e:
+            print(f"Error processing frame: {e}")
+            break
         overlay.draw_landmarks(frame, hands_data)
 
         hitboxes = overlay.get_hitboxes(instrument_manager.current_octave)

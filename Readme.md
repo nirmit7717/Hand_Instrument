@@ -9,6 +9,13 @@ Core Goals
 •	Modular and extensible architecture 
 •	Clean separation between vision, logic, and audio 
 
+## 🌟 Why This Project is Unique?
+Unlike standard AR instruments that rely on complex, error-prone gesture triggers (like estimating finger-bend angles), this project implements a **Spatial Collision Engine**.
+- **Physical Interaction**: It creates a 1:1 spatial mapping between your fingertips and high-fidelity virtual hitboxes. If you touch it, it plays.
+- **Predictive Tracking**: Uses linear velocity projection to compensate for webcam latency, making the response feel near-instant.
+- **Professional IO**: Not just a toy—it broadcasts real-time MIDI signals, allowing you to control professional DAWs (Ableton, Logic, FL Studio) using nothing but your hands.
+- **Background Synthesis**: Audio is generated in a dedicated thread using custom ADSR envelopes and resonance algorithms (Vibraphone, Ambient Pad), ensuring the UI stays buttery smooth.
+
 ## 🛠️ Setup & Installation
 1. Install Python 3.9+
 2. Install dependencies:
