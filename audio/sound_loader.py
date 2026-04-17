@@ -36,6 +36,15 @@ def apply_adsr(wave, sample_rate, attack=0.05, decay=0.2, sustain_level=0.3, rel
         
     return wave * envelope
 
+def apply_echo(wave, sample_rate, delay_ms=200, decay=0.4):
+    """Applies a simple delay buffer echo effect."""
+    delay_samples = int(sample_rate * (delay_ms / 1000.0))
+    echo = wave * decay
+    padded_wave = np.pad(wave, (0, delay_samples), 'constant')
+    padded_echo = np.pad(echo, (delay_samples, 0), 'constant')
+    return padded_wave + padded_echo
+
+
 def generate_instrument_wave(instrument_type, frequency, duration=1.5, volume=0.5, sample_rate=44100):
     """Generates rich harmonic layers based on the selected instrument class."""
     n_samples = int(round(duration * sample_rate))
@@ -59,6 +68,18 @@ def generate_instrument_wave(instrument_type, frequency, duration=1.5, volume=0.
         wave += np.sin(2 * np.pi * frequency * t) * 1.0
         wave += np.sin(2 * np.pi * frequency * 4 * t) * 0.3
         wave = apply_adsr(wave, sample_rate, attack=0.02, decay=0.6, sustain_level=0.1, release=1.0)
+        wave = apply_echo(wave, sample_rate, delay_ms=150, decay=0.3)
+        
+    elif instrument_type == "Ambient Pad":
+        wave += np.sin(2 * np.pi * frequency * t) * 0.5
+        wave += np.sin(2 * np.pi * (frequency * 1.01) * t) * 0.4
+        wave += np.sin(2 * np.pi * (frequency * 0.5) * t) * 0.6
+        # Apply Tremolo (LFO)
+        lfo = 0.5 + 0.5 * np.sin(2 * np.pi * 3.0 * t) 
+        wave = wave * lfo
+        wave = apply_adsr(wave, sample_rate, attack=0.4, decay=0.1, sustain_level=0.9, release=1.5)
+        wave = apply_echo(wave, sample_rate, delay_ms=400, decay=0.5)
+
     
     else:
         wave = np.sin(2 * np.pi * frequency * t)

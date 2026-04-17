@@ -8,7 +8,19 @@ Core Goals
 •	Real-time performance (<50ms latency target) 
 •	Modular and extensible architecture 
 •	Clean separation between vision, logic, and audio 
+
+## 🛠️ Setup & Installation
+1. Install Python 3.9+
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Run the application:
+   ```bash
+   python main.py
+   ```
 ________________________________________
+
 2. 🧠 High-Level Architecture
 [ Webcam Input ]
         ↓

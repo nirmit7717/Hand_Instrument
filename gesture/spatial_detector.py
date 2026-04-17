@@ -7,6 +7,8 @@ class SpatialDetector:
         
         self.fingertips = [4, 8, 12, 16, 20]
         self.PINCH_THRESHOLD = 0.05
+        
+        self.previous_pressed_keys = set()
 
     def evaluate_hands(self, hands_data, hitboxes):
         result = {
@@ -60,6 +62,11 @@ class SpatialDetector:
                                     hit_something = True
                                     break
                                     
+        new_pressed = result["pressed_keys"]
+        result["note_on"] = list(new_pressed - self.previous_pressed_keys)
+        result["note_off"] = list(self.previous_pressed_keys - new_pressed)
+        self.previous_pressed_keys = new_pressed
+        
         result["pinches"] = list(result["pinches"])
-        result["pressed_keys"] = list(result["pressed_keys"])
+        result["pressed_keys"] = list(new_pressed)
         return result
